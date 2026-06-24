@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>PatrolTower</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Adobe Clean', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 12px;
+      background: #1e1e1e;
+      color: #d0d0d0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ヘッダー */
+    .header {
+      background: #2d2d2d;
+      border-bottom: 1px solid #444;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .header-icon { font-size: 16px; }
+    .header-title { font-size: 13px; font-weight: 600; color: #fff; letter-spacing: 0.5px; }
+    .header-version { font-size: 10px; color: #888; margin-left: auto; }
+    .btn-settings {
+      background: none; border: none; color: #aaa; font-size: 15px;
+      cursor: pointer; padding: 2px 4px; border-radius: 3px; line-height: 1;
+    }
+    .btn-settings:hover { color: #fff; background: #444; }
+
+    /* ページ切替（メイン / 設定） */
+    .page { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+    .page.active { display: flex; }
+
+    /* ============ メインページ ============ */
+
+    /* フォルダ追加ボタン */
+    .add-area {
+      margin: 10px 10px 0;
+      flex-shrink: 0;
+    }
+    .btn-add-folder {
+      width: 100%;
+      background: #2a2a2a;
+      border: 1px dashed #555;
+      color: #aaa;
+      font-size: 11px;
+      padding: 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .btn-add-folder:hover { border-color: #4a7fc1; color: #6ab0f5; background: #252f3e; }
+
+    /* ドロップオーバーレイ */
+    .drop-overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(74, 127, 193, 0.15);
+      border: 2px dashed #4a7fc1;
+      border-radius: 4px;
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 8px;
+      color: #6ab0f5;
+      font-size: 13px;
+      font-weight: 600;
+      pointer-events: none;
+    }
+    .drop-overlay.visible { display: flex; }
+    .drop-overlay-icon { font-size: 32px; }
+
+    /* ログエリア */
+    .log-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .log-empty {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #555;
+      font-size: 11px;
+      text-align: center;
+      line-height: 1.6;
+    }
+    .log-folder-group { display: flex; flex-direction: column; gap: 2px; }
+    .log-folder-header {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 6px;
+      background: #2a2a2a;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #ccc;
+    }
+    .log-folder-icon { font-size: 12px; }
+    .log-folder-status { margin-left: auto; font-size: 10px; font-weight: normal; color: #81c784; }
+    .log-file-item {
+      display: flex;
+      align-items: center;
+      padding: 2px 6px 2px 22px;
+      gap: 6px;
+      font-size: 10px;
+      color: #999;
+      border-radius: 2px;
+    }
+    .log-file-item:hover { background: #2a2a2a; }
+    .log-file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .log-file-time { color: #666; flex-shrink: 0; }
+
+    /* フッター */
+    .footer {
+      padding: 8px 10px;
+      border-top: 1px solid #3a3a3a;
+      background: #222;
+      flex-shrink: 0;
+    }
+    .btn-sync-now {
+      width: 100%; background: #2e5a8e; border: 1px solid #4a7fc1;
+      color: #fff; font-size: 12px; font-weight: 600;
+      padding: 7px; border-radius: 4px; cursor: pointer;
+      letter-spacing: 0.3px; transition: background 0.15s;
+    }
+    .btn-sync-now:hover:not(:disabled) { background: #3a6fa0; }
+    .btn-sync-now:disabled { background: #2a2a2a; border-color: #444; color: #666; cursor: not-allowed; }
+    .btn-sync-now.syncing { background: #1a3a5e; color: #6ab0f5; }
+
+    /* ============ 設定ページ ============ */
+    .settings-header {
+      background: #2d2d2d;
+      border-bottom: 1px solid #444;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .btn-back {
+      background: none; border: none; color: #aaa; font-size: 13px;
+      cursor: pointer; padding: 2px 6px; border-radius: 3px;
+    }
+    .btn-back:hover { color: #fff; background: #444; }
+    .settings-title { font-size: 12px; font-weight: 600; color: #ccc; }
+
+    .settings-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* 設定セクション */
+    .s-section {
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .s-section-title {
+      background: #323232;
+      padding: 5px 10px;
+      font-size: 10px;
+      font-weight: 600;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    /* 監視フォルダリスト（設定内） */
+    .s-folder-list { min-height: 40px; }
+    .s-folder-item {
+      padding: 6px 10px;
+      border-bottom: 1px solid #333;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .s-folder-item:last-child { border-bottom: none; }
+    .s-folder-info { flex: 1; overflow: hidden; }
+    .s-folder-path { color: #bbb; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .s-folder-bin { color: #666; font-size: 10px; }
+    .s-folder-bin span { color: #6ab0f5; }
+    .s-folder-remove {
+      background: none; border: none; color: #555; cursor: pointer;
+      font-size: 13px; padding: 2px 5px; border-radius: 2px; flex-shrink: 0;
+    }
+    .s-folder-remove:hover { color: #e06060; background: #3a2a2a; }
+    .s-folder-empty { padding: 12px 10px; text-align: center; color: #555; font-size: 11px; }
+
+    /* 設定行 */
+    .s-row {
+      display: flex;
+      align-items: center;
+      padding: 7px 10px;
+      border-bottom: 1px solid #333;
+      gap: 8px;
+    }
+    .s-row:last-child { border-bottom: none; }
+    .s-label { flex: 1; font-size: 11px; color: #bbb; }
+    .s-label-sub { font-size: 10px; color: #666; margin-top: 1px; }
+
+    /* トグル */
+    .toggle { position: relative; width: 34px; height: 18px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0; background: #444;
+      border-radius: 18px; cursor: pointer; transition: background 0.2s;
+    }
+    .toggle-slider::before {
+      content: ''; position: absolute;
+      width: 12px; height: 12px; left: 3px; top: 3px;
+      background: #aaa; border-radius: 50%;
+      transition: transform 0.2s, background 0.2s;
+    }
+    .toggle input:checked + .toggle-slider { background: #2e7d32; }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(16px); background: #81c784; }
+
+    /* セレクト */
+    .s-select {
+      background: #1a1a1a; border: 1px solid #444;
+      border-radius: 3px; color: #ddd; font-size: 11px;
+      padding: 3px 6px; outline: none; cursor: pointer;
+    }
+    .s-select:disabled { color: #555; cursor: not-allowed; }
+    .s-select:focus { border-color: #4a7fc1; }
+
+    /* テキスト入力 */
+    .s-input {
+      background: #1a1a1a; border: 1px solid #444;
+      border-radius: 3px; color: #ddd; font-size: 11px;
+      padding: 3px 6px; outline: none; width: 130px;
+    }
+    .s-input:focus { border-color: #4a7fc1; }
+
+    /* チェックボックス */
+    .s-checkbox { width: 14px; height: 14px; accent-color: #4a7fc1; cursor: pointer; }
+
+    /* ステータスバー */
+    .statusbar {
+      background: #1a1a1a;
+      border-top: 1px solid #333;
+      padding: 3px 10px;
+      font-size: 10px;
+      color: #666;
+      flex-shrink: 0;
+    }
+    .statusbar.ok  { color: #81c784; }
+    .statusbar.warn { color: #e8a730; }
+    .statusbar.err  { color: #e06060; }
+
+    /* スクロールバー */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: #1a1a1a; }
+    ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #555; }
+  </style>
+</head>
+<body>
+
+<!-- ヘッダー（常に表示） -->
+<div class="header">
+  <span class="header-icon">🗼</span>
+  <span class="header-title">PatrolTower</span>
+  <span class="header-version">v1.1.0</span>
+  <button class="btn-settings" id="btnOpenSettings" title="設定">⚙</button>
+</div>
+
+<!-- ===== メインページ ===== -->
+<div class="page active" id="pageMain">
+
+  <!-- フォルダ追加ボタン -->
+  <div class="add-area">
+    <button class="btn-add-folder" id="btnAddFolder">
+      ＋ クリックしてフォルダを追加
+    </button>
+  </div>
+
+  <!-- ログエリア -->
+  <div class="log-area" id="logArea">
+    <div class="log-empty" id="logEmpty">
+      監視フォルダを追加して<br>「今すぐ同期」を押してください
+    </div>
+  </div>
+
+  <!-- ステータスバー -->
+  <div class="statusbar" id="statusBar">待機中</div>
+
+  <!-- フッター -->
+  <div class="footer">
+    <button class="btn-sync-now" id="btnSyncNow">今すぐ同期</button>
+  </div>
+</div>
+
+<!-- ===== 設定ページ ===== -->
+<div class="page" id="pageSettings">
+
+  <div class="settings-header">
+    <button class="btn-back" id="btnBack">← 戻る</button>
+    <span class="settings-title">設定</span>
+  </div>
+
+  <div class="settings-body">
+
+    <!-- 監視フォルダ一覧 -->
+    <div class="s-section">
+      <div class="s-section-title">監視フォルダ</div>
+      <div class="s-folder-list" id="sFolderList">
+        <div class="s-folder-empty" id="sFolderEmpty">登録されていません</div>
+      </div>
+    </div>
+
+    <!-- 自動同期 -->
+    <div class="s-section">
+      <div class="s-section-title">自動同期</div>
+      <div class="s-row">
+        <div class="s-label">自動同期</div>
+        <label class="toggle">
+          <input type="checkbox" id="sToggleAutoSync" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="s-row">
+        <div class="s-label">同期間隔</div>
+        <select class="s-select" id="sIntervalSelect" disabled>
+          <option value="5">5秒</option>
+          <option value="10">10秒</option>
+          <option value="30" selected>30秒</option>
+          <option value="60">60秒</option>
+          <option value="120">2分</option>
+          <option value="300">5分</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 表示設定 -->
+    <div class="s-section">
+      <div class="s-section-title">表示設定</div>
+      <div class="s-row">
+        <div class="s-label">
+          同期ファイルの最大表示数
+          <div class="s-label-sub">0 で非表示</div>
+        </div>
+        <select class="s-select" id="sMaxLogs">
+          <option value="0">非表示</option>
+          <option value="5">5件</option>
+          <option value="10" selected>10件</option>
+          <option value="20">20件</option>
+          <option value="50">50件</option>
+        </select>
+      </div>
+      <div class="s-row">
+        <div class="s-label">同期時刻を表示</div>
+        <input type="checkbox" class="s-checkbox" id="sShowTime" checked />
+      </div>
+    </div>
+
+    <!-- 除外拡張子 -->
+    <div class="s-section">
+      <div class="s-section-title">除外する拡張子</div>
+      <div class="s-row">
+        <div class="s-label">
+          除外拡張子
+          <div class="s-label-sub">スペース区切り（例: .tmp .ds_store）</div>
+        </div>
+      </div>
+      <div style="padding: 0 10px 10px;">
+        <input type="text" class="s-input" id="sExcludeExts"
+          style="width:100%"
+          placeholder=".tmp .ds_store .lnk" />
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ============================================================
+//  UXP モジュール
+// ============================================================
+let localFileSystem = null;
+let ppro = null;
+let uxpStorage = null;
+
+try {
+  const uxp = require('uxp');
+  uxpStorage = uxp.storage;
+  localFileSystem = uxp.storage.localFileSystem;
+} catch (e) { console.error('UXP storage 読み込み失敗:', e); }
+
+try {
+  ppro = require('premierepro');
+} catch (e) { console.error('premierepro 読み込み失敗:', e); }
+
+// ============================================================
+//  状態管理
+// ============================================================
+const state = {
+  // 監視フォルダ [{ folderPath, binName, token }]
+  watchFolders: [],
+
+  // 自動同期
+  autoSync: false,
+  intervalSec: 30,
+  syncIntervalId: null,
+  isSyncing: false,
+
+  // 表示設定
+  maxLogs: 10,
+  showTime: true,
+  excludeExts: [],  // ['.tmp', '.ds_store'] など
+
+  // 同期ログ [{ binName, fileName, time }] 新しい順
+  syncLog: [],
+};
+
+// ============================================================
+//  設定の永続化
+// ============================================================
+async function loadSettings() {
+  if (!localFileSystem) return;
+  try {
+    const dataFolder = await localFileSystem.getEntryWithUrl('plugin-data:/');
+    const entries = await dataFolder.getEntries();
+    const file = entries.find(e => e.name === 'settings.json');
+    if (!file) return;
+
+    const text = await file.read({ format: uxpStorage.formats.utf8 });
+    const data = JSON.parse(text);
+
+    // 監視フォルダを永続トークンから復元
+    const restored = [];
+    for (const item of (data.watchFolders || [])) {
+      try {
+        const entry = await localFileSystem.getEntryForPersistentToken(item.token);
+        restored.push({ folderPath: entry.nativePath, binName: item.binName, token: item.token });
+      } catch (e) { console.warn('フォルダ復元失敗:', item.folderPath, e); }
+    }
+    state.watchFolders = restored;
+    state.intervalSec  = data.intervalSec  ?? 30;
+    state.maxLogs      = data.maxLogs      ?? 10;
+    state.showTime     = data.showTime     ?? true;
+    state.excludeExts  = data.excludeExts  ?? [];
+    state.syncLog      = data.syncLog      ?? [];
+
+  } catch (e) { console.log('設定ファイルなし（初回起動）:', e); }
+}
+
+async function saveSettings() {
+  if (!localFileSystem) return;
+  try {
+    const dataFolder = await localFileSystem.getEntryWithUrl('plugin-data:/');
+    const json = JSON.stringify({
+      watchFolders: state.watchFolders.map(f => ({
+        folderPath: f.folderPath, binName: f.binName, token: f.token,
+      })),
+      intervalSec:  state.intervalSec,
+      maxLogs:      state.maxLogs,
+      showTime:     state.showTime,
+      excludeExts:  state.excludeExts,
+      syncLog:      state.syncLog.slice(0, 200), // 最大200件まで保存
+    }, null, 2);
+
+    const entries = await dataFolder.getEntries();
+    const existing = entries.find(e => e.name === 'settings.json');
+    if (existing) {
+      await existing.write(json, { format: uxpStorage.formats.utf8 });
+    } else {
+      const f = await dataFolder.createFile('settings.json', { overwrite: true });
+      await f.write(json, { format: uxpStorage.formats.utf8 });
+    }
+  } catch (e) { console.error('設定保存失敗:', e); }
+}
+
+// ============================================================
+//  ステータスバー
+// ============================================================
+function setStatus(msg, type = '') {
+  const el = document.getElementById('statusBar');
+  el.textContent = msg;
+  el.className = 'statusbar' + (type ? ' ' + type : '');
+}
+
+// ============================================================
+//  ログエリア描画
+// ============================================================
+function renderLog() {
+  const area  = document.getElementById('logArea');
+  const empty = document.getElementById('logEmpty');
+
+  // 既存ログアイテムを削除
+  area.querySelectorAll('.log-folder-group').forEach(el => el.remove());
+
+  if (state.syncLog.length === 0 || state.maxLogs === 0) {
+    empty.style.display = 'flex';
+    return;
+  }
+  empty.style.display = 'none';
+
+  // binName ごとにグループ化（登録順）
+  const groups = {};
+  const binOrder = [];
+  for (const entry of state.syncLog) {
+    if (!groups[entry.binName]) { groups[entry.binName] = []; binOrder.push(entry.binName); }
+    groups[entry.binName].push(entry);
+  }
+
+  for (const binName of binOrder) {
+    const files = groups[binName].slice(0, state.maxLogs);
+    const latest = files[0];
+
+    const group = document.createElement('div');
+    group.className = 'log-folder-group';
+
+    const timeStr = state.showTime && latest
+      ? `✅ ${latest.time}（+${files.length}件）` : '';
+
+    group.innerHTML = `
+      <div class="log-folder-header">
+        <span class="log-folder-icon">📁</span>
+        <span>${binName}</span>
+        <span class="log-folder-status">${timeStr}</span>
+      </div>
+      ${files.map(f => `
+        <div class="log-file-item">
+          <span class="log-file-name" title="${f.fileName}">${f.fileName}</span>
+          ${state.showTime ? `<span class="log-file-time">${f.time}</span>` : ''}
+        </div>
+      `).join('')}
+    `;
+    area.appendChild(group);
+  }
+}
+
+// ============================================================
+//  設定ページ：監視フォルダリスト描画
+// ============================================================
+function renderSettingsFolderList() {
+  const list  = document.getElementById('sFolderList');
+  const empty = document.getElementById('sFolderEmpty');
+
+  list.querySelectorAll('.s-folder-item').forEach(el => el.remove());
+
+  if (state.watchFolders.length === 0) {
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  state.watchFolders.forEach((folder, idx) => {
+    const item = document.createElement('div');
+    item.className = 's-folder-item';
+    const shortPath = folder.folderPath.length > 30
+      ? '...' + folder.folderPath.slice(-30) : folder.folderPath;
+    item.innerHTML = `
+      <div class="s-folder-info">
+        <div class="s-folder-path" title="${folder.folderPath}">${shortPath}</div>
+        <div class="s-folder-bin">ビン: <span>${folder.binName}</span></div>
+      </div>
+      <button class="s-folder-remove" data-idx="${idx}" title="削除">×</button>
+    `;
+    list.appendChild(item);
+  });
+
+  list.querySelectorAll('.s-folder-remove').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      state.watchFolders.splice(parseInt(btn.dataset.idx), 1);
+      renderSettingsFolderList();
+      await saveSettings();
+    });
+  });
+}
+
+// ============================================================
+//  設定ページ：UI → state への反映
+// ============================================================
+function applySettingsToUI() {
+  document.getElementById('sToggleAutoSync').checked = state.autoSync;
+  document.getElementById('sIntervalSelect').value   = String(state.intervalSec);
+  document.getElementById('sIntervalSelect').disabled = !state.autoSync;
+  document.getElementById('sMaxLogs').value           = String(state.maxLogs);
+  document.getElementById('sShowTime').checked        = state.showTime;
+  document.getElementById('sExcludeExts').value       = state.excludeExts.join(' ');
+}
+
+// ============================================================
+//  ページ切替
+// ============================================================
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+document.getElementById('btnOpenSettings').addEventListener('click', () => {
+  renderSettingsFolderList();
+  applySettingsToUI();
+  showPage('pageSettings');
+});
+
+document.getElementById('btnBack').addEventListener('click', () => {
+  showPage('pageMain');
+  renderLog();
+});
+
+// ============================================================
+//  設定ページ：各コントロールのイベント
+// ============================================================
+
+// 自動同期トグル
+document.getElementById('sToggleAutoSync').addEventListener('change', async (e) => {
+  state.autoSync = e.target.checked;
+  document.getElementById('sIntervalSelect').disabled = !state.autoSync;
+  if (state.autoSync) startAutoSync(); else stopAutoSync();
+  await saveSettings();
+});
+
+// 同期間隔
+document.getElementById('sIntervalSelect').addEventListener('change', async (e) => {
+  state.intervalSec = parseInt(e.target.value);
+  if (state.autoSync) startAutoSync();
+  await saveSettings();
+});
+
+// 最大表示数
+document.getElementById('sMaxLogs').addEventListener('change', async (e) => {
+  state.maxLogs = parseInt(e.target.value);
+  await saveSettings();
+});
+
+// 時刻表示
+document.getElementById('sShowTime').addEventListener('change', async (e) => {
+  state.showTime = e.target.checked;
+  await saveSettings();
+});
+
+// 除外拡張子（フォーカスアウト時に保存）
+document.getElementById('sExcludeExts').addEventListener('blur', async (e) => {
+  const raw = e.target.value.trim();
+  state.excludeExts = raw
+    ? raw.split(/\s+/).map(s => s.startsWith('.') ? s.toLowerCase() : '.' + s.toLowerCase())
+    : [];
+  await saveSettings();
+});
+
+// ============================================================
+//  フォルダ追加（メインページ）
+// ============================================================
+document.getElementById('btnAddFolder').addEventListener('click', async () => {
+  if (!localFileSystem) { setStatus('ファイルシステムAPIが利用できません', 'err'); return; }
+
+  try {
+    // フォルダ選択ダイアログを表示
+    const entry = await localFileSystem.getFolder();
+    if (!entry) return; // キャンセル
+
+    const folderPath = entry.nativePath;
+
+    // 重複チェック
+    if (state.watchFolders.find(f => f.folderPath === folderPath)) {
+      setStatus('このフォルダはすでに登録されています', 'warn');
+      return;
+    }
+
+    // ビン名はフォルダ名をデフォルトとして使用
+    const binName = entry.name;
+
+    // 永続トークンを発行して保存
+    const token = await localFileSystem.createPersistentToken(entry);
+    state.watchFolders.push({ folderPath, binName, token });
+
+    await saveSettings();
+    setStatus(`「${binName}」を追加しました`, 'ok');
+
+  } catch (e) {
+    console.error('フォルダ追加エラー:', e);
+    setStatus('フォルダの追加に失敗しました', 'err');
+  }
+});
+
+// ============================================================
+//  ビン操作ヘルパー
+// ============================================================
+async function getOrCreateBin(project, rootFolderItem, binName) {
+  // 既存ビンを探す
+  const children = await rootFolderItem.getItems();
+  for (const child of children) {
+    if (child.name === binName) {
+      try { return ppro.FolderItem.cast(child); } catch (e) { /* シーケンスなどスキップ */ }
+    }
+  }
+
+  // なければ作成
+  await project.executeTransaction((compoundAction) => {
+    compoundAction.addAction(rootFolderItem.createBinAction(binName, false));
+  }, 'PatrolTower: ビン作成');
+
+  // 作成後に再取得
+  const updated = await rootFolderItem.getItems();
+  for (const child of updated) {
+    if (child.name === binName) {
+      try { return ppro.FolderItem.cast(child); } catch (e) { /* skip */ }
+    }
+  }
+  return null;
+}
+
+async function getExistingItemNames(bin) {
+  const names = new Set();
+  try {
+    const items = await bin.getItems();
+    for (const item of items) names.add(item.name);
+  } catch (e) { console.warn('既存アイテム取得エラー:', e); }
+  return names;
+}
+
+// サポート拡張子 + 除外拡張子チェック
+function isSupportedFile(filename) {
+  const ext = '.' + filename.split('.').pop().toLowerCase();
+
+  // 除外リストに含まれていたらスキップ
+  if (state.excludeExts.includes(ext)) return false;
+
+  const supported = [
+    '.mp4','.mov','.avi','.mkv','.mxf','.r3d','.braw','.mpg','.mpeg','.m4v','.wmv','.flv','.webm',
+    '.mp3','.wav','.aac','.aiff','.flac','.ogg','.m4a',
+    '.jpg','.jpeg','.png','.gif','.tif','.tiff','.bmp','.webp','.psd','.psb','.ai','.eps',
+  ];
+  return supported.includes(ext);
+}
+
+// ============================================================
+//  コア：同期処理
+// ============================================================
+async function syncFolders() {
+  if (state.isSyncing) return;
+  if (!ppro) { setStatus('Premiere APIが利用できません', 'err'); return; }
+  if (state.watchFolders.length === 0) { setStatus('監視フォルダが登録されていません', 'warn'); return; }
+
+  state.isSyncing = true;
+  const btn = document.getElementById('btnSyncNow');
+  btn.disabled = true;
+  btn.classList.add('syncing');
+  btn.textContent = '同期中...';
+  setStatus('同期中...');
+
+  let totalImported = 0;
+  let errorCount = 0;
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('ja-JP');
+
+  try {
+    const project = await ppro.Project.getActiveProject();
+    if (!project) throw new Error('アクティブなプロジェクトが見つかりません');
+
+    const rootFolderItem = await project.getRootItem();
+
+    for (const watchFolder of state.watchFolders) {
+      try {
+        const folderEntry   = await localFileSystem.getEntryForPersistentToken(watchFolder.token);
+        const fileEntries   = await folderEntry.getEntries();
+        const bin           = await getOrCreateBin(project, rootFolderItem, watchFolder.binName);
+
+        if (!bin) {
+          console.error('ビン取得/作成失敗:', watchFolder.binName);
+          errorCount++;
+          continue;
+        }
+
+        const existingNames = await getExistingItemNames(bin);
+
+        // 新規ファイルを収集
+        const newFiles = [];
+        for (const fileEntry of fileEntries) {
+          if (!fileEntry.isFile) continue;
+          if (!isSupportedFile(fileEntry.name)) continue;
+          if (existingNames.has(fileEntry.name)) continue;
+          newFiles.push(fileEntry);
+        }
+
+        if (newFiles.length > 0) {
+          await project.importFiles(
+            newFiles.map(f => f.nativePath),
+            true,  // suppressUI
+            bin,
+            false  // asNumberedStills
+          );
+
+          // ログに追加（新しい順）
+          for (const f of newFiles) {
+            state.syncLog.unshift({ binName: watchFolder.binName, fileName: f.name, time: timeStr });
+          }
+          // 最大200件に制限
+          if (state.syncLog.length > 200) state.syncLog = state.syncLog.slice(0, 200);
+
+          totalImported += newFiles.length;
+          console.log(`インポート: ${watchFolder.binName} に ${newFiles.length}件`);
+        }
+
+      } catch (e) {
+        console.error('フォルダ処理エラー:', watchFolder.folderPath, e);
+        errorCount++;
+      }
+    }
+
+    await saveSettings(); // ログを保存
+
+    if (errorCount === 0) {
+      const msg = totalImported > 0
+        ? `${timeStr} 同期完了（+${totalImported}件）`
+        : `${timeStr} 同期完了（新規なし）`;
+      setStatus(msg, 'ok');
+    } else {
+      setStatus(`${timeStr} 同期（+${totalImported}件 / エラー${errorCount}件）`, 'warn');
+    }
+
+    renderLog();
+
+  } catch (e) {
+    console.error('同期エラー:', e);
+    setStatus('同期エラー: ' + e.message, 'err');
+  } finally {
+    state.isSyncing = false;
+    btn.disabled = false;
+    btn.classList.remove('syncing');
+    btn.textContent = '今すぐ同期';
+  }
+}
+
+// ============================================================
+//  自動同期タイマー
+// ============================================================
+function startAutoSync() {
+  stopAutoSync();
+  state.syncIntervalId = setInterval(async () => { await syncFolders(); }, state.intervalSec * 1000);
+  setStatus(`自動同期: ${state.intervalSec}秒ごと`, 'ok');
+}
+
+function stopAutoSync() {
+  if (state.syncIntervalId) { clearInterval(state.syncIntervalId); state.syncIntervalId = null; }
+}
+
+// ============================================================
+//  今すぐ同期ボタン
+// ============================================================
+document.getElementById('btnSyncNow').addEventListener('click', async () => {
+  await syncFolders();
+});
+
+// ============================================================
+//  起動処理
+// ============================================================
+async function initialize() {
+  console.log('PatrolTower: 初期化開始');
+  await loadSettings();
+
+  // 自動同期が保存時ONだった場合は再開しない（安全のため手動ONのみ）
+  state.autoSync = false;
+
+  renderLog();
+  setStatus('待機中');
+  console.log('PatrolTower: 初期化完了');
+}
+
+initialize().catch(e => console.error('PatrolTower: 初期化エラー', e));
+</script>
+</body>
+</html>

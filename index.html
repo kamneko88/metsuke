@@ -27,8 +27,18 @@
       gap: 8px;
       flex-shrink: 0;
     }
-    .header-icon { font-size: 16px; }
-    .header-title { font-size: 13px; font-weight: 600; color: #fff; letter-spacing: 0.5px; }
+    .header-icon { font-size: 15px; }
+    .header-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, #6ab0f5, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
     .header-version { font-size: 10px; color: #888; margin-left: auto; }
     .btn-settings {
       background: none; border: none; color: #aaa; font-size: 15px;
@@ -281,9 +291,9 @@
 
 <!-- ヘッダー（常に表示） -->
 <div class="header">
-  <span class="header-icon">🗼</span>
+  <span class="header-icon">👁</span>
   <span class="header-title">Metsuke</span>
-  <span class="header-version">v1.1.0</span>
+  <span class="header-version">v1.2.0</span>
   <button class="btn-settings" id="btnOpenSettings" title="設定">⚙</button>
 </div>
 
@@ -376,19 +386,29 @@
       </div>
     </div>
 
-    <!-- 除外拡張子 -->
+    <!-- 通知設定 -->
     <div class="s-section">
-      <div class="s-section-title">除外する拡張子</div>
+      <div class="s-section-title">通知</div>
       <div class="s-row">
-        <div class="s-label">
-          除外拡張子
-          <div class="s-label-sub">スペース区切り（例: .tmp .ds_store）</div>
-        </div>
+        <div class="s-label">同期完了時に通知を表示</div>
+        <input type="checkbox" class="s-checkbox" id="sShowNotification" checked />
       </div>
-      <div style="padding: 0 10px 10px;">
-        <input type="text" class="s-input" id="sExcludeExts"
-          style="width:100%"
-          placeholder=".tmp .ds_store .lnk" />
+    </div>
+
+    <!-- ファイルフィルタ -->
+    <div class="s-section">
+      <div class="s-section-title">同期するファイル種類</div>
+      <div class="s-row">
+        <div class="s-label">動画<div class="s-label-sub">.mp4 .mov .avi .mkv .mxf ...</div></div>
+        <input type="checkbox" class="s-checkbox" id="sFilterVideo" checked />
+      </div>
+      <div class="s-row">
+        <div class="s-label">音声<div class="s-label-sub">.mp3 .wav .aac .flac ...</div></div>
+        <input type="checkbox" class="s-checkbox" id="sFilterAudio" checked />
+      </div>
+      <div class="s-row">
+        <div class="s-label">画像<div class="s-label-sub">.jpg .png .tif .psd ...</div></div>
+        <input type="checkbox" class="s-checkbox" id="sFilterImage" checked />
       </div>
     </div>
 
@@ -431,7 +451,12 @@ const state = {
   // 表示設定
   maxLogs: 10,
   showTime: true,
-  excludeExts: [],  // ['.tmp', '.ds_store'] など
+  showNotification: true,
+
+  // ファイルフィルタ
+  filterVideo: true,
+  filterAudio: true,
+  filterImage: true,
 
   // 同期ログ [{ binName, fileName, time }] 新しい順
   syncLog: [],
@@ -460,11 +485,14 @@ async function loadSettings() {
       } catch (e) { console.warn('フォルダ復元失敗:', item.folderPath, e); }
     }
     state.watchFolders = restored;
-    state.intervalSec  = data.intervalSec  ?? 30;
-    state.maxLogs      = data.maxLogs      ?? 10;
-    state.showTime     = data.showTime     ?? true;
-    state.excludeExts  = data.excludeExts  ?? [];
-    state.syncLog      = data.syncLog      ?? [];
+    state.intervalSec       = data.intervalSec       ?? 30;
+    state.maxLogs           = data.maxLogs           ?? 10;
+    state.showTime          = data.showTime          ?? true;
+    state.showNotification  = data.showNotification  ?? true;
+    state.filterVideo       = data.filterVideo       ?? true;
+    state.filterAudio       = data.filterAudio       ?? true;
+    state.filterImage       = data.filterImage       ?? true;
+    state.syncLog           = data.syncLog           ?? [];
 
   } catch (e) { console.log('設定ファイルなし（初回起動）:', e); }
 }
@@ -477,11 +505,14 @@ async function saveSettings() {
       watchFolders: state.watchFolders.map(f => ({
         folderPath: f.folderPath, binName: f.binName, token: f.token,
       })),
-      intervalSec:  state.intervalSec,
-      maxLogs:      state.maxLogs,
-      showTime:     state.showTime,
-      excludeExts:  state.excludeExts,
-      syncLog:      state.syncLog.slice(0, 200), // 最大200件まで保存
+      intervalSec:      state.intervalSec,
+      maxLogs:          state.maxLogs,
+      showTime:         state.showTime,
+      showNotification: state.showNotification,
+      filterVideo:      state.filterVideo,
+      filterAudio:      state.filterAudio,
+      filterImage:      state.filterImage,
+      syncLog:          state.syncLog.slice(0, 200),
     }, null, 2);
 
     const entries = await dataFolder.getEntries();
@@ -564,6 +595,7 @@ function renderSettingsFolderList() {
 
   list.querySelectorAll('.s-folder-item').forEach(el => el.remove());
 
+  // watchFolders が空かどうかで判定（ファイルの有無は関係ない）
   if (state.watchFolders.length === 0) {
     empty.style.display = 'block';
     return;
@@ -598,12 +630,15 @@ function renderSettingsFolderList() {
 //  設定ページ：UI → state への反映
 // ============================================================
 function applySettingsToUI() {
-  document.getElementById('sToggleAutoSync').checked = state.autoSync;
-  document.getElementById('sIntervalSelect').value   = String(state.intervalSec);
-  document.getElementById('sIntervalSelect').disabled = !state.autoSync;
-  document.getElementById('sMaxLogs').value           = String(state.maxLogs);
-  document.getElementById('sShowTime').checked        = state.showTime;
-  document.getElementById('sExcludeExts').value       = state.excludeExts.join(' ');
+  document.getElementById('sToggleAutoSync').checked    = state.autoSync;
+  document.getElementById('sIntervalSelect').value      = String(state.intervalSec);
+  document.getElementById('sIntervalSelect').disabled   = !state.autoSync;
+  document.getElementById('sMaxLogs').value             = String(state.maxLogs);
+  document.getElementById('sShowTime').checked          = state.showTime;
+  document.getElementById('sShowNotification').checked  = state.showNotification;
+  document.getElementById('sFilterVideo').checked       = state.filterVideo;
+  document.getElementById('sFilterAudio').checked       = state.filterAudio;
+  document.getElementById('sFilterImage').checked       = state.filterImage;
 }
 
 // ============================================================
@@ -615,9 +650,15 @@ function showPage(id) {
 }
 
 document.getElementById('btnOpenSettings').addEventListener('click', () => {
-  renderSettingsFolderList();
-  applySettingsToUI();
-  showPage('pageSettings');
+  const isSettings = document.getElementById('pageSettings').classList.contains('active');
+  if (isSettings) {
+    showPage('pageMain');
+    renderLog();
+  } else {
+    renderSettingsFolderList();
+    applySettingsToUI();
+    showPage('pageSettings');
+  }
 });
 
 document.getElementById('btnBack').addEventListener('click', () => {
@@ -656,13 +697,21 @@ document.getElementById('sShowTime').addEventListener('change', async (e) => {
   await saveSettings();
 });
 
-// 除外拡張子（フォーカスアウト時に保存）
-document.getElementById('sExcludeExts').addEventListener('blur', async (e) => {
-  const raw = e.target.value.trim();
-  state.excludeExts = raw
-    ? raw.split(/\s+/).map(s => s.startsWith('.') ? s.toLowerCase() : '.' + s.toLowerCase())
-    : [];
+// 通知
+document.getElementById('sShowNotification').addEventListener('change', async (e) => {
+  state.showNotification = e.target.checked;
   await saveSettings();
+});
+
+// ファイルフィルタ
+document.getElementById('sFilterVideo').addEventListener('change', async (e) => {
+  state.filterVideo = e.target.checked; await saveSettings();
+});
+document.getElementById('sFilterAudio').addEventListener('change', async (e) => {
+  state.filterAudio = e.target.checked; await saveSettings();
+});
+document.getElementById('sFilterImage').addEventListener('change', async (e) => {
+  state.filterImage = e.target.checked; await saveSettings();
 });
 
 // ============================================================
@@ -736,19 +785,57 @@ async function getExistingItemNames(bin) {
   return names;
 }
 
-// サポート拡張子 + 除外拡張子チェック
+// フォルダを再帰的に走査してファイルエントリをすべて収集
+async function collectFilesRecursive(folderEntry, fileList = []) {
+  try {
+    const entries = await folderEntry.getEntries();
+    for (const entry of entries) {
+      if (entry.isFile) {
+        fileList.push(entry);
+      } else {
+        // サブフォルダを再帰処理
+        await collectFilesRecursive(entry, fileList);
+      }
+    }
+  } catch (e) {
+    console.warn('サブフォルダ走査エラー:', folderEntry.nativePath, e);
+  }
+  return fileList;
+}
+
+// ファイル種類チェック
 function isSupportedFile(filename) {
   const ext = '.' + filename.split('.').pop().toLowerCase();
 
-  // 除外リストに含まれていたらスキップ
-  if (state.excludeExts.includes(ext)) return false;
+  const videoExts = ['.mp4','.mov','.avi','.mkv','.mxf','.r3d','.braw','.mpg','.mpeg','.m4v','.wmv','.flv','.webm'];
+  const audioExts = ['.mp3','.wav','.aac','.aiff','.flac','.ogg','.m4a'];
+  const imageExts = ['.jpg','.jpeg','.png','.gif','.tif','.tiff','.bmp','.webp','.psd','.psb','.ai','.eps'];
 
-  const supported = [
-    '.mp4','.mov','.avi','.mkv','.mxf','.r3d','.braw','.mpg','.mpeg','.m4v','.wmv','.flv','.webm',
-    '.mp3','.wav','.aac','.aiff','.flac','.ogg','.m4a',
-    '.jpg','.jpeg','.png','.gif','.tif','.tiff','.bmp','.webp','.psd','.psb','.ai','.eps',
-  ];
-  return supported.includes(ext);
+  if (state.filterVideo && videoExts.includes(ext)) return true;
+  if (state.filterAudio && audioExts.includes(ext)) return true;
+  if (state.filterImage && imageExts.includes(ext)) return true;
+  return false;
+}
+
+// デスクトップ通知
+function showNotification(title, message) {
+  if (!state.showNotification) return;
+  try {
+    // UXPではWeb Notifications APIが使用可能
+    if (typeof Notification !== 'undefined') {
+      if (Notification.permission === 'granted') {
+        new Notification(title, { body: message, silent: false });
+      } else if (Notification.permission !== 'denied') {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            new Notification(title, { body: message, silent: false });
+          }
+        });
+      }
+    }
+  } catch (e) {
+    console.warn('通知の表示に失敗:', e);
+  }
 }
 
 // ============================================================
@@ -780,7 +867,8 @@ async function syncFolders() {
     for (const watchFolder of state.watchFolders) {
       try {
         const folderEntry   = await localFileSystem.getEntryForPersistentToken(watchFolder.token);
-        const fileEntries   = await folderEntry.getEntries();
+        // サブフォルダも含めて再帰的にファイルを収集
+        const fileEntries   = await collectFilesRecursive(folderEntry);
         const bin           = await getOrCreateBin(project, rootFolderItem, watchFolder.binName);
 
         if (!bin) {
@@ -832,8 +920,12 @@ async function syncFolders() {
         ? `${timeStr} 同期完了（+${totalImported}件）`
         : `${timeStr} 同期完了（新規なし）`;
       setStatus(msg, 'ok');
+      if (totalImported > 0) {
+        showNotification('Metsuke — 同期完了', `${totalImported}件のファイルをインポートしました`);
+      }
     } else {
       setStatus(`${timeStr} 同期（+${totalImported}件 / エラー${errorCount}件）`, 'warn');
+      showNotification('Metsuke — 同期完了（エラーあり）', `+${totalImported}件 / エラー${errorCount}件`);
     }
 
     renderLog();

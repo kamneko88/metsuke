@@ -1,10 +1,10 @@
 {
   "manifestVersion": 5,
-  "id": "com.yourname.patroltower",
-  "name": "PatrolTower",
+  "id": "com.yourname.metsuke",
+  "name": "Metsuke",
   "version": "1.0.0",
   "main": "index.html",
-  "description": "Automatically syncs watch folders to Premiere Pro project bins.",
+  "description": "フォルダ自動同期 Premiere Pro UXPプラグイン / Watch folder auto-sync plugin for Premiere Pro",
   "host": {
     "app": "premierepro",
     "minVersion": "25.6.0"
@@ -12,9 +12,9 @@
   "entrypoints": [
     {
       "type": "panel",
-      "id": "patroltower-panel",
+      "id": "metsuke-panel",
       "label": {
-        "default": "PatrolTower"
+        "default": "Metsuke"
       },
       "minimumSize": { "width": 300, "height": 400 },
       "preferredDockedSize": { "width": 350, "height": 550 },

@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>PatrolTower</title>
+  <title>Metsuke</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -282,7 +282,7 @@
 <!-- ヘッダー（常に表示） -->
 <div class="header">
   <span class="header-icon">🗼</span>
-  <span class="header-title">PatrolTower</span>
+  <span class="header-title">Metsuke</span>
   <span class="header-version">v1.1.0</span>
   <button class="btn-settings" id="btnOpenSettings" title="設定">⚙</button>
 </div>
@@ -715,7 +715,7 @@ async function getOrCreateBin(project, rootFolderItem, binName) {
   // なければ作成
   await project.executeTransaction((compoundAction) => {
     compoundAction.addAction(rootFolderItem.createBinAction(binName, false));
-  }, 'PatrolTower: ビン作成');
+  }, 'Metsuke: ビン作成');
 
   // 作成後に再取得
   const updated = await rootFolderItem.getItems();
@@ -873,7 +873,7 @@ document.getElementById('btnSyncNow').addEventListener('click', async () => {
 //  起動処理
 // ============================================================
 async function initialize() {
-  console.log('PatrolTower: 初期化開始');
+  console.log('Metsuke: 初期化開始');
   await loadSettings();
 
   // 自動同期が保存時ONだった場合は再開しない（安全のため手動ONのみ）
@@ -881,10 +881,10 @@ async function initialize() {
 
   renderLog();
   setStatus('待機中');
-  console.log('PatrolTower: 初期化完了');
+  console.log('Metsuke: 初期化完了');
 }
 
-initialize().catch(e => console.error('PatrolTower: 初期化エラー', e));
+initialize().catch(e => console.error('Metsuke: 初期化エラー', e));
 </script>
 </body>
 </html>

@@ -1,6 +1,6 @@
-# PatrolTower
+# Metsuke
 
-Premiere Pro UXP プラグイン — 監視フォルダの自動同期ツール
+**目付** — フォルダ自動同期 Premiere Pro UXPプラグイン / Watch folder auto-sync plugin for Premiere Pro
 
 ## 概要
 

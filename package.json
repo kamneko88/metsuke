@@ -1,5 +1,5 @@
 {
-  "name": "patrol-tower",
+  "name": "metsuke",
   "version": "1.0.0",
-  "description": "Premiere Pro UXP plugin - Watch folder auto sync"
+  "description": "フォルダ自動同期 Premiere Pro UXPプラグイン / Watch folder auto-sync plugin for Premiere Pro"
 }

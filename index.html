@@ -293,7 +293,7 @@
 <div class="header">
   <span class="header-icon">👁</span>
   <span class="header-title">Metsuke</span>
-  <span class="header-version">v1.2.0</span>
+  <span class="header-version">v1.3.0</span>
   <button class="btn-settings" id="btnOpenSettings" title="設定">⚙</button>
 </div>
 
@@ -412,6 +412,18 @@
       </div>
     </div>
 
+    <!-- フォルダ構造 -->
+    <div class="s-section">
+      <div class="s-section-title">フォルダ構造</div>
+      <div class="s-row">
+        <div class="s-label">
+          サブフォルダのビン構造を再現
+          <div class="s-label-sub">OFFの場合は全ファイルをフラットにインポート</div>
+        </div>
+        <input type="checkbox" class="s-checkbox" id="sPreserveStructure" checked />
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -458,6 +470,9 @@ const state = {
   filterAudio: true,
   filterImage: true,
 
+  // サブフォルダのビン構造を再現するか
+  preserveStructure: true,
+
   // 同期ログ [{ binName, fileName, time }] 新しい順
   syncLog: [],
 };
@@ -491,7 +506,8 @@ async function loadSettings() {
     state.showNotification  = data.showNotification  ?? true;
     state.filterVideo       = data.filterVideo       ?? true;
     state.filterAudio       = data.filterAudio       ?? true;
-    state.filterImage       = data.filterImage       ?? true;
+    state.filterImage        = data.filterImage        ?? true;
+    state.preserveStructure  = data.preserveStructure  ?? true;
     state.syncLog           = data.syncLog           ?? [];
 
   } catch (e) { console.log('設定ファイルなし（初回起動）:', e); }
@@ -511,7 +527,8 @@ async function saveSettings() {
       showNotification: state.showNotification,
       filterVideo:      state.filterVideo,
       filterAudio:      state.filterAudio,
-      filterImage:      state.filterImage,
+      filterImage:       state.filterImage,
+      preserveStructure: state.preserveStructure,
       syncLog:          state.syncLog.slice(0, 200),
     }, null, 2);
 
@@ -638,7 +655,8 @@ function applySettingsToUI() {
   document.getElementById('sShowNotification').checked  = state.showNotification;
   document.getElementById('sFilterVideo').checked       = state.filterVideo;
   document.getElementById('sFilterAudio').checked       = state.filterAudio;
-  document.getElementById('sFilterImage').checked       = state.filterImage;
+  document.getElementById('sFilterImage').checked         = state.filterImage;
+  document.getElementById('sPreserveStructure').checked   = state.preserveStructure;
 }
 
 // ============================================================
@@ -713,6 +731,9 @@ document.getElementById('sFilterAudio').addEventListener('change', async (e) => 
 document.getElementById('sFilterImage').addEventListener('change', async (e) => {
   state.filterImage = e.target.checked; await saveSettings();
 });
+document.getElementById('sPreserveStructure').addEventListener('change', async (e) => {
+  state.preserveStructure = e.target.checked; await saveSettings();
+});
 
 // ============================================================
 //  フォルダ追加（メインページ）
@@ -785,22 +806,24 @@ async function getExistingItemNames(bin) {
   return names;
 }
 
-// フォルダを再帰的に走査してファイルエントリをすべて収集
-async function collectFilesRecursive(folderEntry, fileList = []) {
+// フォルダを再帰的に走査。構造情報付きでファイルを収集
+// 戻り値: [{ entry, relativeBinPath: ['サブA', 'サブB', ...] }]
+async function collectFilesWithStructure(folderEntry, currentPath = []) {
+  const result = [];
   try {
     const entries = await folderEntry.getEntries();
     for (const entry of entries) {
       if (entry.isFile) {
-        fileList.push(entry);
+        result.push({ entry, relativeBinPath: [...currentPath] });
       } else {
-        // サブフォルダを再帰処理
-        await collectFilesRecursive(entry, fileList);
+        const sub = await collectFilesWithStructure(entry, [...currentPath, entry.name]);
+        result.push(...sub);
       }
     }
   } catch (e) {
-    console.warn('サブフォルダ走査エラー:', folderEntry.nativePath, e);
+    console.warn('サブフォルダ走査エラー:', e);
   }
-  return fileList;
+  return result;
 }
 
 // ファイル種類チェック
@@ -866,46 +889,64 @@ async function syncFolders() {
 
     for (const watchFolder of state.watchFolders) {
       try {
-        const folderEntry   = await localFileSystem.getEntryForPersistentToken(watchFolder.token);
-        // サブフォルダも含めて再帰的にファイルを収集
-        const fileEntries   = await collectFilesRecursive(folderEntry);
-        const bin           = await getOrCreateBin(project, rootFolderItem, watchFolder.binName);
+        const folderEntry = await localFileSystem.getEntryForPersistentToken(watchFolder.token);
 
-        if (!bin) {
-          console.error('ビン取得/作成失敗:', watchFolder.binName);
-          errorCount++;
-          continue;
-        }
+        // 構造情報付きでファイルを収集
+        const filesWithPath = await collectFilesWithStructure(folderEntry);
 
-        const existingNames = await getExistingItemNames(bin);
+        // ルートビンを取得/作成
+        const rootBin = await getOrCreateBin(project, rootFolderItem, watchFolder.binName);
+        if (!rootBin) { console.error('ルートビン取得/作成失敗:', watchFolder.binName); errorCount++; continue; }
 
-        // 新規ファイルを収集
-        const newFiles = [];
-        for (const fileEntry of fileEntries) {
-          if (!fileEntry.isFile) continue;
-          if (!isSupportedFile(fileEntry.name)) continue;
-          if (existingNames.has(fileEntry.name)) continue;
-          newFiles.push(fileEntry);
-        }
+        // ビンごとにファイルをグループ化（キャッシュして二重API呼び出しを防ぐ）
+        // key: 'サブA/サブB' のような相対パス文字列
+        const binCache = new Map();   // binPath → { bin, existingNames, newFiles }
+        binCache.set('', { bin: rootBin, existingNames: await getExistingItemNames(rootBin), newFiles: [] });
 
-        if (newFiles.length > 0) {
-          await project.importFiles(
-            newFiles.map(f => f.nativePath),
-            true,  // suppressUI
-            bin,
-            false  // asNumberedStills
-          );
+        for (const { entry, relativeBinPath } of filesWithPath) {
+          if (!isSupportedFile(entry.name)) continue;
 
-          // ログに追加（新しい順）
-          for (const f of newFiles) {
-            state.syncLog.unshift({ binName: watchFolder.binName, fileName: f.name, time: timeStr });
+          // インポート先ビンを決定
+          let binKey = '';
+          if (state.preserveStructure && relativeBinPath.length > 0) {
+            binKey = relativeBinPath.join('/');
+            if (!binCache.has(binKey)) {
+              // サブビンを順番に辿って取得/作成
+              let currentBin = rootBin;
+              for (const subName of relativeBinPath) {
+                currentBin = await getOrCreateBin(project, currentBin, subName);
+                if (!currentBin) break;
+              }
+              if (currentBin) {
+                binCache.set(binKey, { bin: currentBin, existingNames: await getExistingItemNames(currentBin), newFiles: [] });
+              } else {
+                binKey = ''; // 失敗時はルートビンにフォールバック
+              }
+            }
           }
-          // 最大200件に制限
-          if (state.syncLog.length > 200) state.syncLog = state.syncLog.slice(0, 200);
 
-          totalImported += newFiles.length;
-          console.log(`インポート: ${watchFolder.binName} に ${newFiles.length}件`);
+          const group = binCache.get(binKey);
+          if (group && !group.existingNames.has(entry.name)) {
+            group.newFiles.push(entry);
+          }
         }
+
+        // ビンごとにまとめてインポート
+        for (const { bin, newFiles } of binCache.values()) {
+          if (newFiles.length === 0) continue;
+          try {
+            await project.importFiles(newFiles.map(f => f.nativePath), true, bin, false);
+            for (const f of newFiles) {
+              state.syncLog.unshift({ binName: watchFolder.binName, fileName: f.name, time: timeStr });
+            }
+            totalImported += newFiles.length;
+            console.log(`インポート: ${watchFolder.binName} に ${newFiles.length}件`);
+          } catch (e) {
+            console.error('インポートエラー:', e);
+            errorCount++;
+          }
+        }
+        if (state.syncLog.length > 200) state.syncLog = state.syncLog.slice(0, 200);
 
       } catch (e) {
         console.error('フォルダ処理エラー:', watchFolder.folderPath, e);

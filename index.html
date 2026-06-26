@@ -8,7 +8,7 @@
 
     body {
       font-family: 'Adobe Clean', -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 12px;
+      font-size: 13px;
       background: #1e1e1e;
       color: #d0d0d0;
       height: 100vh;
@@ -19,32 +19,28 @@
 
     /* ヘッダー */
     .header {
-      background: #2d2d2d;
-      border-bottom: 1px solid #444;
-      padding: 8px 12px;
+      background: #085041;
+      border-bottom: 1px solid #0F6E56;
+      padding: 8px 16px;
       display: flex;
       align-items: center;
       gap: 8px;
       flex-shrink: 0;
     }
-    .header-icon { font-size: 15px; }
+    .header-icon { font-size: 20px; }
     .header-title {
-      font-size: 15px;
+      font-size: 18px;
       font-weight: 800;
-      color: #fff;
-      letter-spacing: 2px;
+      color: #E1F5EE;
+      letter-spacing: 3px;
       text-transform: uppercase;
-      background: linear-gradient(90deg, #6ab0f5, #a78bfa);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
     }
-    .header-version { font-size: 10px; color: #888; margin-left: auto; }
+    .header-version { font-size: 11px; color: #5DCAA5; margin-left: auto; margin-right: 8px; }
     .btn-settings {
-      background: none; border: none; color: #aaa; font-size: 15px;
-      cursor: pointer; padding: 2px 4px; border-radius: 3px; line-height: 1;
+      background: none; color: #9FE1CB; font-size: 20px;
+      padding: 2px 4px; border-radius: 3px; line-height: 1;
     }
-    .btn-settings:hover { color: #fff; background: #444; }
+    .btn-settings:hover { color: #E1F5EE; background: #0F6E56; }
 
     /* ページ切替（メイン / 設定） */
     .page { display: none; flex: 1; flex-direction: column; overflow: hidden; }
@@ -53,23 +49,20 @@
     /* ============ メインページ ============ */
 
     /* フォルダ追加ボタン */
-    .add-area {
-      margin: 10px 10px 0;
-      flex-shrink: 0;
-    }
+    .add-area { margin: 0 8px; flex-shrink: 0; }
     .btn-add-folder {
       width: 100%;
-      background: #2a2a2a;
-      border: 1px dashed #555;
-      color: #aaa;
-      font-size: 11px;
-      padding: 8px;
+      background: #252525;
+      border: 1px solid #3a3a3a;
       border-radius: 4px;
-      cursor: pointer;
+      color: #888;
+      font-size: 13px;
+      padding: 10px;
       text-align: center;
       transition: all 0.15s;
+      margin: 8px 0 0;
     }
-    .btn-add-folder:hover { border-color: #4a7fc1; color: #6ab0f5; background: #252f3e; }
+    .btn-add-folder:hover { background: #1a2a25; color: #5DCAA5; border-color: #1D9E75; }
 
     /* ドロップオーバーレイ */
     .drop-overlay {
@@ -107,7 +100,7 @@
       align-items: center;
       justify-content: center;
       color: #555;
-      font-size: 11px;
+      font-size: 13px;
       text-align: center;
       line-height: 1.6;
     }
@@ -116,21 +109,21 @@
       display: flex;
       align-items: center;
       gap: 5px;
-      padding: 4px 6px;
+      padding: 5px 8px;
       background: #2a2a2a;
       border-radius: 3px;
-      font-size: 11px;
+      font-size: 13px;
       font-weight: 600;
       color: #ccc;
     }
-    .log-folder-icon { font-size: 12px; }
-    .log-folder-status { margin-left: auto; font-size: 10px; font-weight: normal; color: #81c784; }
+    .log-folder-icon { font-size: 14px; }
+    .log-folder-status { margin-left: auto; font-size: 12px; font-weight: normal; color: #81c784; }
     .log-file-item {
       display: flex;
       align-items: center;
-      padding: 2px 6px 2px 22px;
+      padding: 3px 8px 3px 24px;
       gap: 6px;
-      font-size: 10px;
+      font-size: 12px;
       color: #999;
       border-radius: 2px;
     }
@@ -140,20 +133,23 @@
 
     /* フッター */
     .footer {
-      padding: 8px 10px;
-      border-top: 1px solid #3a3a3a;
-      background: #222;
+      padding: 0;
+      border-top: none;
+      background: #1e1e1e;
       flex-shrink: 0;
     }
     .btn-sync-now {
-      width: 100%; background: #2e5a8e; border: 1px solid #4a7fc1;
-      color: #fff; font-size: 12px; font-weight: 600;
-      padding: 7px; border-radius: 4px; cursor: pointer;
+      width: 100%; background: #085041;
+      color: #E1F5EE; font-size: 13px; font-weight: 600;
+      padding: 10px; text-align: center;
       letter-spacing: 0.3px; transition: background 0.15s;
+      border-radius: 4px;
+      margin: 8px;
+      width: calc(100% - 16px);
     }
-    .btn-sync-now:hover:not(:disabled) { background: #3a6fa0; }
-    .btn-sync-now:disabled { background: #2a2a2a; border-color: #444; color: #666; cursor: not-allowed; }
-    .btn-sync-now.syncing { background: #1a3a5e; color: #6ab0f5; }
+    .btn-sync-now.disabled { background: #063830; color: #5DCAA5; opacity: 0.5; cursor: not-allowed; }
+    .btn-sync-now.syncing  { background: #063830; color: #5DCAA5; }
+    .btn-sync-now:not(.disabled):not(.syncing):hover { background: #0F6E56; }
 
     /* ============ 設定ページ ============ */
     .settings-header {
@@ -166,11 +162,11 @@
       flex-shrink: 0;
     }
     .btn-back {
-      background: none; border: none; color: #aaa; font-size: 13px;
-      cursor: pointer; padding: 2px 6px; border-radius: 3px;
+      background: none; color: #aaa; font-size: 14px;
+      padding: 2px 6px; border-radius: 3px;
     }
     .btn-back:hover { color: #fff; background: #444; }
-    .settings-title { font-size: 12px; font-weight: 600; color: #ccc; }
+    .settings-title { font-size: 14px; font-weight: 600; color: #ccc; }
 
     .settings-body {
       flex: 1;
@@ -187,11 +183,12 @@
       border: 1px solid #3a3a3a;
       border-radius: 4px;
       overflow: hidden;
+      flex-shrink: 0;
     }
     .s-section-title {
       background: #323232;
-      padding: 5px 10px;
-      font-size: 10px;
+      padding: 6px 10px;
+      font-size: 11px;
       font-weight: 600;
       color: #888;
       text-transform: uppercase;
@@ -199,9 +196,9 @@
     }
 
     /* 監視フォルダリスト（設定内） */
-    .s-folder-list { min-height: 40px; }
+    .s-folder-list { min-height: 0; }
     .s-folder-item {
-      padding: 6px 10px;
+      padding: 2px 10px;
       border-bottom: 1px solid #333;
       display: flex;
       align-items: center;
@@ -213,23 +210,23 @@
     .s-folder-bin { color: #666; font-size: 10px; }
     .s-folder-bin span { color: #6ab0f5; }
     .s-folder-remove {
-      background: none; border: none; color: #555; cursor: pointer;
-      font-size: 13px; padding: 2px 5px; border-radius: 2px; flex-shrink: 0;
+      background: none; color: #555;
+      font-size: 15px; padding: 2px 5px; border-radius: 2px; flex-shrink: 0;
     }
     .s-folder-remove:hover { color: #e06060; background: #3a2a2a; }
-    .s-folder-empty { padding: 12px 10px; text-align: center; color: #555; font-size: 11px; }
+    .s-folder-empty { padding: 12px 10px; text-align: center; color: #555; font-size: 12px; }
 
     /* 設定行 */
     .s-row {
       display: flex;
       align-items: center;
-      padding: 7px 10px;
+      padding: 8px 10px;
       border-bottom: 1px solid #333;
       gap: 8px;
     }
     .s-row:last-child { border-bottom: none; }
-    .s-label { flex: 1; font-size: 11px; color: #bbb; }
-    .s-label-sub { font-size: 10px; color: #666; margin-top: 1px; }
+    .s-label { flex: 1; font-size: 12px; color: #bbb; }
+    .s-label-sub { font-size: 11px; color: #666; margin-top: 1px; }
 
     /* トグル */
     .toggle { position: relative; width: 34px; height: 18px; flex-shrink: 0; }
@@ -250,8 +247,8 @@
     /* セレクト */
     .s-select {
       background: #1a1a1a; border: 1px solid #444;
-      border-radius: 3px; color: #ddd; font-size: 11px;
-      padding: 3px 6px; outline: none; cursor: pointer;
+      border-radius: 3px; color: #ddd; font-size: 12px;
+      padding: 4px 6px; outline: none; cursor: pointer;
     }
     .s-select:disabled { color: #555; cursor: not-allowed; }
     .s-select:focus { border-color: #4a7fc1; }
@@ -265,20 +262,27 @@
     .s-input:focus { border-color: #4a7fc1; }
 
     /* チェックボックス */
-    .s-checkbox { width: 14px; height: 14px; accent-color: #4a7fc1; cursor: pointer; }
+    .s-checkbox { width: 15px; height: 15px; accent-color: #4a7fc1; cursor: pointer; }
 
     /* ステータスバー */
     .statusbar {
       background: #1a1a1a;
       border-top: 1px solid #333;
-      padding: 3px 10px;
-      font-size: 10px;
+      padding: 4px 10px;
+      font-size: 11px;
       color: #666;
       flex-shrink: 0;
     }
     .statusbar.ok  { color: #81c784; }
     .statusbar.warn { color: #e8a730; }
     .statusbar.err  { color: #e06060; }
+
+    /* ボタン共通（divベース） */
+    .btn-add-folder, .btn-sync-now, .btn-settings, .btn-back, .s-folder-remove {
+      -webkit-user-select: none;
+      user-select: none;
+      cursor: pointer;
+    }
 
     /* スクロールバー */
     ::-webkit-scrollbar { width: 5px; }
@@ -294,7 +298,7 @@
   <span class="header-icon">👁</span>
   <span class="header-title">Metsuke</span>
   <span class="header-version">v1.3.0</span>
-  <button class="btn-settings" id="btnOpenSettings" title="設定">⚙</button>
+  <div class="btn-settings" id="btnOpenSettings" title="設定">⚙</div>
 </div>
 
 <!-- ===== メインページ ===== -->
@@ -302,9 +306,9 @@
 
   <!-- フォルダ追加ボタン -->
   <div class="add-area">
-    <button class="btn-add-folder" id="btnAddFolder">
+    <div class="btn-add-folder" id="btnAddFolder">
       ＋ クリックしてフォルダを追加
-    </button>
+    </div>
   </div>
 
   <!-- ログエリア -->
@@ -319,7 +323,7 @@
 
   <!-- フッター -->
   <div class="footer">
-    <button class="btn-sync-now" id="btnSyncNow">今すぐ同期</button>
+    <div class="btn-sync-now" id="btnSyncNow">今すぐ同期</div>
   </div>
 </div>
 
@@ -327,7 +331,7 @@
 <div class="page" id="pageSettings">
 
   <div class="settings-header">
-    <button class="btn-back" id="btnBack">← 戻る</button>
+    <div class="btn-back" id="btnBack">← 戻る</div>
     <span class="settings-title">設定</span>
   </div>
 
@@ -636,7 +640,11 @@ function renderSettingsFolderList() {
 
   list.querySelectorAll('.s-folder-remove').forEach(btn => {
     btn.addEventListener('click', async () => {
-      state.watchFolders.splice(parseInt(btn.dataset.idx), 1);
+      const idx = parseInt(btn.dataset.idx);
+      const removedBinName = state.watchFolders[idx].binName;
+      state.watchFolders.splice(idx, 1);
+      // 削除したフォルダのログも除去
+      state.syncLog = state.syncLog.filter(e => e.binName !== removedBinName);
       renderSettingsFolderList();
       await saveSettings();
     });
@@ -871,8 +879,7 @@ async function syncFolders() {
 
   state.isSyncing = true;
   const btn = document.getElementById('btnSyncNow');
-  btn.disabled = true;
-  btn.classList.add('syncing');
+  btn.classList.add('disabled', 'syncing');
   btn.textContent = '同期中...';
   setStatus('同期中...');
 
@@ -976,8 +983,7 @@ async function syncFolders() {
     setStatus('同期エラー: ' + e.message, 'err');
   } finally {
     state.isSyncing = false;
-    btn.disabled = false;
-    btn.classList.remove('syncing');
+    btn.classList.remove('disabled', 'syncing');
     btn.textContent = '今すぐ同期';
   }
 }
@@ -999,6 +1005,7 @@ function stopAutoSync() {
 //  今すぐ同期ボタン
 // ============================================================
 document.getElementById('btnSyncNow').addEventListener('click', async () => {
+  if (state.isSyncing) return;
   await syncFolders();
 });
 

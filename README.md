@@ -35,7 +35,16 @@
 
 ---
 
-## インストール（開発版）
+## インストール
+
+### .ccx ファイルからインストール（推奨）
+
+1. [Releases](https://github.com/kamneko88/metsuke/releases) から最新の `.ccx` ファイルをダウンロード
+2. ダウンロードした `.ccx` ファイルをダブルクリック
+3. Creative Cloud デスクトップアプリが開くので「Install」をクリック
+4. Premiere Pro を起動 → **Window → UXP Plugins → Metsuke** で開く
+
+### 開発版（UDT使用）
 
 1. [UXP Developer Tool（UDT）](https://developer.adobe.com/photoshop/uxp/devtool/) をインストール
 2. Premiere Pro を起動

@@ -297,7 +297,7 @@
 <div class="header">
   <span class="header-icon">👁</span>
   <span class="header-title">Metsuke</span>
-  <span class="header-version">v1.3.1</span>
+  <span class="header-version">v1.3.2</span>
   <div class="btn-settings" id="btnOpenSettings" title="設定">⚙</div>
 </div>
 
@@ -314,7 +314,7 @@
   <!-- ログエリア -->
   <div class="log-area" id="logArea">
     <div class="log-empty" id="logEmpty">
-      監視フォルダを追加して<br>「今すぐ同期」を押してください
+      監視フォルダを追加して「今すぐ読み込み」を押してください
     </div>
   </div>
 
@@ -323,7 +323,7 @@
 
   <!-- フッター -->
   <div class="footer">
-    <div class="btn-sync-now" id="btnSyncNow">今すぐ同期</div>
+    <div class="btn-sync-now" id="btnSyncNow">今すぐ読み込み</div>
   </div>
 </div>
 
@@ -347,23 +347,21 @@
 
     <!-- 自動同期 -->
     <div class="s-section">
-      <div class="s-section-title">自動同期</div>
+      <div class="s-section-title">自動読み込み</div>
       <div class="s-row">
-        <div class="s-label">自動同期</div>
+        <div class="s-label">自動読み込み</div>
         <label class="toggle">
           <input type="checkbox" id="sToggleAutoSync" />
           <span class="toggle-slider"></span>
         </label>
       </div>
       <div class="s-row">
-        <div class="s-label">同期間隔</div>
+        <div class="s-label">読み込み間隔</div>
         <select class="s-select" id="sIntervalSelect" disabled>
-          <option value="5">5秒</option>
           <option value="10">10秒</option>
           <option value="30" selected>30秒</option>
           <option value="60">60秒</option>
           <option value="120">2分</option>
-          <option value="300">5分</option>
         </select>
       </div>
     </div>
@@ -373,7 +371,7 @@
       <div class="s-section-title">表示設定</div>
       <div class="s-row">
         <div class="s-label">
-          同期ファイルの最大表示数
+          読み込みファイルの最大表示数
           <div class="s-label-sub">0 で非表示</div>
         </div>
         <select class="s-select" id="sMaxLogs">
@@ -385,7 +383,7 @@
         </select>
       </div>
       <div class="s-row">
-        <div class="s-label">同期時刻を表示</div>
+        <div class="s-label">読み込み時刻を表示</div>
         <input type="checkbox" class="s-checkbox" id="sShowTime" checked />
       </div>
     </div>
@@ -394,20 +392,20 @@
     <div class="s-section">
       <div class="s-section-title">通知</div>
       <div class="s-row">
-        <div class="s-label">同期完了時に通知を表示</div>
+        <div class="s-label">読み込み完了時に通知を表示</div>
         <input type="checkbox" class="s-checkbox" id="sShowNotification" checked />
       </div>
     </div>
 
     <!-- ファイルフィルタ -->
     <div class="s-section">
-      <div class="s-section-title">同期するファイル種類</div>
+      <div class="s-section-title">読み込むファイル種類</div>
       <div class="s-row">
         <div class="s-label">動画<div class="s-label-sub">.mp4 .mov .avi .mkv .mxf ...</div></div>
         <input type="checkbox" class="s-checkbox" id="sFilterVideo" checked />
       </div>
       <div class="s-row">
-        <div class="s-label">音声<div class="s-label-sub">.mp3 .wav .aac .flac ...</div></div>
+        <div class="s-label">音声<div class="s-label-sub">.mp3 .wav .aac .aiff .ogg .m4a ...</div></div>
         <input type="checkbox" class="s-checkbox" id="sFilterAudio" checked />
       </div>
       <div class="s-row">
@@ -839,7 +837,7 @@ function isSupportedFile(filename) {
   const ext = '.' + filename.split('.').pop().toLowerCase();
 
   const videoExts = ['.mp4','.mov','.avi','.mkv','.mxf','.r3d','.braw','.mpg','.mpeg','.m4v','.wmv','.flv','.webm'];
-  const audioExts = ['.mp3','.wav','.aac','.aiff','.flac','.ogg','.m4a'];
+  const audioExts = ['.mp3','.wav','.aac','.aiff','.ogg','.m4a'];
   const imageExts = ['.jpg','.jpeg','.png','.gif','.tif','.tiff','.bmp','.webp','.psd','.psb','.ai','.eps'];
 
   if (state.filterVideo && videoExts.includes(ext)) return true;
@@ -880,8 +878,8 @@ async function syncFolders() {
   state.isSyncing = true;
   const btn = document.getElementById('btnSyncNow');
   btn.classList.add('disabled', 'syncing');
-  btn.textContent = '同期中...';
-  setStatus('同期中...');
+  btn.textContent = '読み込み中...';
+  setStatus('読み込み中...');
 
   let totalImported = 0;
   let errorCount = 0;
@@ -965,26 +963,26 @@ async function syncFolders() {
 
     if (errorCount === 0) {
       const msg = totalImported > 0
-        ? `${timeStr} 同期完了（+${totalImported}件）`
-        : `${timeStr} 同期完了（新規なし）`;
+        ? `${timeStr} 読み込み完了（+${totalImported}件）`
+        : `${timeStr} 読み込み完了（新規なし）`;
       setStatus(msg, 'ok');
       if (totalImported > 0) {
-        showNotification('Metsuke — 同期完了', `${totalImported}件のファイルをインポートしました`);
+        showNotification('Metsuke — 読み込み完了', `${totalImported}件のファイルをインポートしました`);
       }
     } else {
-      setStatus(`${timeStr} 同期（+${totalImported}件 / エラー${errorCount}件）`, 'warn');
-      showNotification('Metsuke — 同期完了（エラーあり）', `+${totalImported}件 / エラー${errorCount}件`);
+      setStatus(`${timeStr} 読み込み（+${totalImported}件 / エラー${errorCount}件）`, 'warn');
+      showNotification('Metsuke — 読み込み完了（エラーあり）', `+${totalImported}件 / エラー${errorCount}件`);
     }
 
     renderLog();
 
   } catch (e) {
     console.error('同期エラー:', e);
-    setStatus('同期エラー: ' + e.message, 'err');
+    setStatus('読み込みエラー: ' + e.message, 'err');
   } finally {
     state.isSyncing = false;
     btn.classList.remove('disabled', 'syncing');
-    btn.textContent = '今すぐ同期';
+    btn.textContent = '今すぐ読み込み';
   }
 }
 
@@ -994,7 +992,7 @@ async function syncFolders() {
 function startAutoSync() {
   stopAutoSync();
   state.syncIntervalId = setInterval(async () => { await syncFolders(); }, state.intervalSec * 1000);
-  setStatus(`自動同期: ${state.intervalSec}秒ごと`, 'ok');
+  setStatus(`自動読み込み: ${state.intervalSec}秒ごと`, 'ok');
 }
 
 function stopAutoSync() {

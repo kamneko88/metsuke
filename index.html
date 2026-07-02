@@ -388,15 +388,6 @@
       </div>
     </div>
 
-    <!-- 通知設定 -->
-    <div class="s-section">
-      <div class="s-section-title">通知</div>
-      <div class="s-row">
-        <div class="s-label">読み込み完了時に通知を表示</div>
-        <input type="checkbox" class="s-checkbox" id="sShowNotification" checked />
-      </div>
-    </div>
-
     <!-- ファイルフィルタ -->
     <div class="s-section">
       <div class="s-section-title">読み込むファイル種類</div>
@@ -465,7 +456,6 @@ const state = {
   // 表示設定
   maxLogs: 10,
   showTime: true,
-  showNotification: true,
 
   // ファイルフィルタ
   filterVideo: true,
@@ -505,7 +495,6 @@ async function loadSettings() {
     state.intervalSec       = data.intervalSec       ?? 30;
     state.maxLogs           = data.maxLogs           ?? 10;
     state.showTime          = data.showTime          ?? true;
-    state.showNotification  = data.showNotification  ?? true;
     state.filterVideo       = data.filterVideo       ?? true;
     state.filterAudio       = data.filterAudio       ?? true;
     state.filterImage        = data.filterImage        ?? true;
@@ -526,7 +515,6 @@ async function saveSettings() {
       intervalSec:      state.intervalSec,
       maxLogs:          state.maxLogs,
       showTime:         state.showTime,
-      showNotification: state.showNotification,
       filterVideo:      state.filterVideo,
       filterAudio:      state.filterAudio,
       filterImage:       state.filterImage,
@@ -658,7 +646,6 @@ function applySettingsToUI() {
   document.getElementById('sIntervalSelect').disabled   = !state.autoSync;
   document.getElementById('sMaxLogs').value             = String(state.maxLogs);
   document.getElementById('sShowTime').checked          = state.showTime;
-  document.getElementById('sShowNotification').checked  = state.showNotification;
   document.getElementById('sFilterVideo').checked       = state.filterVideo;
   document.getElementById('sFilterAudio').checked       = state.filterAudio;
   document.getElementById('sFilterImage').checked         = state.filterImage;
@@ -718,12 +705,6 @@ document.getElementById('sMaxLogs').addEventListener('change', async (e) => {
 // 時刻表示
 document.getElementById('sShowTime').addEventListener('change', async (e) => {
   state.showTime = e.target.checked;
-  await saveSettings();
-});
-
-// 通知
-document.getElementById('sShowNotification').addEventListener('change', async (e) => {
-  state.showNotification = e.target.checked;
   await saveSettings();
 });
 
@@ -846,26 +827,7 @@ function isSupportedFile(filename) {
   return false;
 }
 
-// デスクトップ通知
-function showNotification(title, message) {
-  if (!state.showNotification) return;
-  try {
-    // UXPではWeb Notifications APIが使用可能
-    if (typeof Notification !== 'undefined') {
-      if (Notification.permission === 'granted') {
-        new Notification(title, { body: message, silent: false });
-      } else if (Notification.permission !== 'denied') {
-        Notification.requestPermission().then(permission => {
-          if (permission === 'granted') {
-            new Notification(title, { body: message, silent: false });
-          }
-        });
-      }
-    }
-  } catch (e) {
-    console.warn('通知の表示に失敗:', e);
-  }
-}
+// デスクトップ通知（UXP環境ではNotification API非対応のため未実装）
 
 // ============================================================
 //  コア：同期処理
@@ -966,12 +928,8 @@ async function syncFolders() {
         ? `${timeStr} 読み込み完了（+${totalImported}件）`
         : `${timeStr} 読み込み完了（新規なし）`;
       setStatus(msg, 'ok');
-      if (totalImported > 0) {
-        showNotification('Metsuke — 読み込み完了', `${totalImported}件のファイルをインポートしました`);
-      }
     } else {
       setStatus(`${timeStr} 読み込み（+${totalImported}件 / エラー${errorCount}件）`, 'warn');
-      showNotification('Metsuke — 読み込み完了（エラーあり）', `+${totalImported}件 / エラー${errorCount}件`);
     }
 
     renderLog();

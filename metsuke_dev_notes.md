@@ -1,26 +1,35 @@
 # Metsuke 開発まとめ
 
-最終更新日：2026-06-26
+最終更新日：2026-07-02
 
 ---
 
 ## プロジェクト概要
 
 **Metsuke（目付）** は、Premiere Pro UXP プラグインです。
-指定した監視フォルダ内のメディアファイルを自動的に Premiere Pro のプロジェクトビンにインポートします。
-有料プラグイン「Watchtower」($40) の代替として、500円での販売を想定して開発しています。
+指定した監視フォルダ内のメディアファイルを Premiere Pro のプロジェクトビンに自動で読み込みます。
 
-- **リポジトリ**: https://github.com/kamneko88/metsuke
-- **対応バージョン**: Premiere Pro 2025（v25.6以降）/ 2026（v26系）
-- **技術**: HTML + CSS + JavaScript（単一ファイル構成）、Adobe UXP API
+- **リポジトリ**: https://github.com/kamneko88/metsuke（非公開）
+- **Booth**: https://kamneko.booth.pm/items/8547606
+- **対応バージョン**: Premiere Pro 2025（v25.6以降）/ 2026（v26系）、Windows
+- **現在のバージョン**: v1.3.2
+- **プラグインID**: com.kamneko.metsuke
 
 ---
 
 ## 命名経緯
 
-- 当初は「PatrolTower」という名前で開発開始
-- Watchtower（監視塔）へのパクリ臭を避けるため、江戸幕府の監察役「目付（Metsuke）」に改名
-- リポジトリ名・manifest・全ファイルを一括リネーム済み
+- 当初「PatrolTower」として開発開始
+- Watchtowerへの類似を避け、江戸幕府の監察役「目付（Metsuke）」に改名
+- プラグインIDも `com.yourname.metsuke` → `com.kamneko.metsuke` に変更済み
+
+---
+
+## 販売・配布方針
+
+- **製品版**：Booth にて無料配布（応援版 500円 を併売）
+- **おためし版（LE版）**：一時作成したが現在非推奨。製品版を無料公開する方針に変更したため
+- Adobe Marketplace への掲載は将来検討
 
 ---
 
@@ -28,16 +37,17 @@
 
 ```
 metsuke/
-├── manifest.json   # プラグイン定義
-├── package.json    # npm設定
-├── index.html      # UI + ロジック（単一ファイル）
+├── manifest.json            # プラグイン定義（v1.3.2）
+├── package.json
+├── index.html               # 製品版 UI + ロジック
+├── metsuke_dev_notes.md     # 本ファイル
+├── README.md
 ├── .gitignore
-└── README.md
+├── dist/                    # パッケージ済み .ccx（Git管理外）
+└── metsuke-le/              # おためし版（参考用・現在非推奨）
+    ├── manifest.json
+    └── index.html
 ```
-
-### 単一ファイル構成の理由
-
-UXP Developer Tool（UDT）でのロード時、パス解決の制約により CSS・JS を外部ファイルに分離すると読み込めないケースがあるため、すべて `index.html` にインライン記述しています。
 
 ---
 
@@ -46,27 +56,13 @@ UXP Developer Tool（UDT）でのロード時、パス解決の制約により C
 ```json
 {
   "manifestVersion": 5,
-  "id": "com.yourname.metsuke",
+  "id": "com.kamneko.metsuke",
   "name": "Metsuke",
-  "version": "1.2.0",
+  "version": "1.3.2",
   "main": "index.html",
   "host": {
     "app": "premierepro",
     "minVersion": "25.6.0"
-  },
-  "entrypoints": [
-    {
-      "type": "panel",
-      "id": "metsuke-panel",
-      "label": { "default": "Metsuke" }
-    }
-  ],
-  "requiredPermissions": {
-    "localFileSystem": "fullAccess",
-    "launchProcess": {
-      "schemes": ["file"],
-      "extensions": [".mp3", ".wav", "..."]
-    }
   }
 }
 ```
@@ -83,13 +79,11 @@ UXP Developer Tool（UDT）でのロード時、パス解決の制約により C
 
 ## 開発環境
 
-- **OS**: Windows
-- **PowerShell**: 7.6.2
-- **Node.js**: v24.14.0
-- **npm**: v11.11.0
-- **エディタ**: Visual Studio Code
-- **Premiere Pro**: 26.2.2
+- **OS**: Windows 11 Pro
+- **Premiere Pro**: v26.2.2（2026）
 - **UXP Developer Tool（UDT）**: v2.2以降
+- **エディタ**: VS Code
+- **Node.js**: v24系 / npm v11系
 
 ### 開発ループ
 
@@ -106,37 +100,18 @@ UXP Developer Tool（UDT）でのロード時、パス解決の制約により C
 ### モジュール読み込み
 
 ```javascript
-// ファイルシステム
 const uxp = require('uxp');
 const localFileSystem = uxp.storage.localFileSystem;
-
-// Premiere Pro API
 const ppro = require('premierepro');
 ```
 
-**注意**: `require()` はすべて `try/catch` で囲むこと。エラー時にページ全体がクラッシュする。
-
-### ファイルシステム
-
-```javascript
-// フォルダ選択ダイアログ
-const entry = await localFileSystem.getFolder();
-
-// 永続トークン（次回起動時の復元に使用）
-const token = await localFileSystem.createPersistentToken(entry);
-const restoredEntry = await localFileSystem.getEntryForPersistentToken(token);
-
-// 設定の保存先
-const dataFolder = await localFileSystem.getEntryWithUrl('plugin-data:/');
-```
+**注意**: `require()` はすべて `try/catch` で囲む。エラー時にページ全体がクラッシュする。
 
 ### Premiere Pro API
 
 ```javascript
 // アクティブプロジェクト取得
 const project = await ppro.Project.getActiveProject();
-
-// ルートビン取得（FolderItem）
 const rootFolderItem = await project.getRootItem();
 
 // ビン作成（Actionパターン必須）
@@ -144,72 +119,85 @@ await project.executeTransaction((compoundAction) => {
   compoundAction.addAction(rootFolderItem.createBinAction(binName, false));
 }, 'ビン作成');
 
-// FolderItem にキャスト
+// FolderItemにキャスト
 const bin = ppro.FolderItem.cast(projectItem);
 
 // ファイルインポート
-await project.importFiles(
-  [filePath1, filePath2],  // パスの配列
-  true,                     // suppressUI
-  targetBin,                // インポート先ビン
-  false                     // asNumberedStills
-);
+await project.importFiles([filePath1, filePath2], true, targetBin, false);
+
+// ビンからアイテム削除（確認済み）
+await project.executeTransaction((ca) => {
+  ca.addAction(parentFolderItem.createRemoveItemAction(targetItem));
+}, '削除');
+
+// アイテムを別ビンに移動（確認済み）
+await project.executeTransaction((ca) => {
+  ca.addAction(destFolderItem.createMoveItemAction(targetItem, destFolderItem));
+}, '移動');
 ```
 
-### ビン作成の注意点
+### UXP スタイル制約（重要）
 
-`rootItem.createBin()` は存在しない。必ず `executeTransaction` + `createBinAction` を使う。
+- `<button>` タグは UXP の Spectrum Widget に自動スタイルが上書きされる → `<div role="button">` で代替
+- `border-radius` はボタン要素に対してUXP内部でオーバーライドされる
+- `Notification` API は UXP 環境では非対応（`ReferenceError: Notification is not defined`）
 
-### プロパティとメソッドの違い
+### ファイルシステム
 
-- **プロパティ**: 同期（`await` 不要）
-- **メソッド**: 非同期（`await` 必須）
+```javascript
+const entry = await localFileSystem.getFolder();
+const token = await localFileSystem.createPersistentToken(entry);
+const restoredEntry = await localFileSystem.getEntryForPersistentToken(token);
+const dataFolder = await localFileSystem.getEntryWithUrl('plugin-data:/');
+```
 
 ---
 
-## 機能一覧（v1.2.0時点）
+## 機能一覧（v1.3.2）
 
 ### メイン画面
 
 | 機能 | 説明 |
 |---|---|
 | フォルダ追加 | クリックでフォルダ選択ダイアログを開く |
-| 今すぐ同期 | 手動で即時同期を実行 |
-| 同期ログ表示 | ビン名・ファイル名・時刻をグループ表示 |
-| ステータスバー | 同期結果・エラーを色付きで表示 |
+| 今すぐ読み込み | 手動で即時読み込みを実行 |
+| 読み込みログ表示 | ビン名・ファイル名・時刻をグループ表示 |
+| ステータスバー | 読み込み結果・エラーを色付きで表示 |
 | ⚙ボタントグル | メイン⇔設定をワンボタンで切替 |
 
 ### 設定画面
 
 | 設定項目 | 内容 |
 |---|---|
-| 監視フォルダ一覧 | 登録フォルダを表示・×で削除 |
-| 自動同期 ON/OFF | トグルスイッチ |
-| 同期間隔 | 5秒 / 10秒 / 30秒（デフォルト）/ 60秒 / 2分 / 5分 |
+| 監視フォルダ一覧 | 登録フォルダを表示・×で削除（削除時はログも連動削除） |
+| 自動読み込み ON/OFF | トグルスイッチ |
+| 読み込み間隔 | 10秒 / 30秒（デフォルト）/ 60秒 / 2分 |
 | 最大表示件数 | 非表示 / 5 / 10 / 20 / 50件 |
 | 時刻表示 | チェックボックス |
-| 同期完了通知 | デスクトップ通知のON/OFF |
-| 同期ファイル種類 | 動画 / 音声 / 画像 をカテゴリ単位でON/OFF |
+| 読み込むファイル種類 | 動画 / 音声 / 画像 をカテゴリ単位でON/OFF |
+| サブフォルダのビン構造を再現 | ON/OFF |
 
 ### 対応ファイル形式
 
 | カテゴリ | 拡張子 |
 |---|---|
 | 動画 | .mp4 .mov .avi .mkv .mxf .r3d .braw .mpg .mpeg .m4v .wmv .flv .webm |
-| 音声 | .mp3 .wav .aac .aiff .flac .ogg .m4a |
+| 音声 | .mp3 .wav .aac .aiff .ogg .m4a |
 | 画像 | .jpg .jpeg .png .gif .tif .tiff .bmp .webp .psd .psb .ai .eps |
+
+※ `.flac` は Premiere Pro ネイティブ非対応のため除外
 
 ---
 
-## 既知の制限・今後の課題
+## 既知の制限
 
 | 項目 | 状況 |
 |---|---|
-| フォルダのD&D登録 | UXP の制限により現状不可。将来のAPI拡充待ち |
-| バックグラウンド自動同期 | パネルが開いている間のみ動作（UXPパネルの仕様） |
-| サブフォルダのビン構造再現 | 現状フラットにインポート。構造保持は今後実装予定 |
+| フォルダのD&D登録 | UXP の制限により不可。クリックダイアログで代替 |
+| バックグラウンド自動読み込み | パネルが開いている間のみ動作 |
+| 削除・移動の反映 | 監視フォルダ内のファイル削除はビンに反映されない（UXP API制約） |
+| デスクトップ通知 | UXP 環境で Notification API 非対応のため未実装 |
 | Mac対応 | 未検証 |
-| After Effects対応 | 未対応 |
 
 ---
 
@@ -217,13 +205,13 @@ await project.importFiles(
 
 | 項目 | Watchtower | Metsuke |
 |---|---|---|
-| 価格 | $40（約6,000円） | **500円** |
+| 価格 | $40（約6,000円） | **無料（応援版500円）** |
 | 技術基盤 | CEP（旧世代） | **UXP（最新世代）** |
-| 同期ログ表示 | なし | **あり** |
+| 読み込みログ表示 | なし | **あり** |
 | ビン名を自由設定 | なし | **あり** |
-| ファイル種類フィルタ | チェックボックス式 | **チェックボックス式** |
-| 日本語UI | あり | あり |
-| 通知 | あり | あり |
+| ファイル種類フィルタ | あり | **あり** |
+| サブフォルダ構造再現 | あり | **あり** |
+| 削除の反映 | あり（フォルダ側削除のみ） | **なし（制約により未対応）** |
 
 ---
 
@@ -233,23 +221,18 @@ await project.importFiles(
 |---|---|
 | v1.0.0 | 初回リリース。フォルダ追加・手動同期・自動同期・設定保存 |
 | v1.1.0 | 設定画面追加、ログ表示、ステータスバー、フォルダ追加をダイアログ直結方式に変更 |
-| v1.2.0 | 通知機能追加、ファイル種類フィルタ追加（カテゴリ式）、除外拡張子手入力廃止、アイコン変更（👁）、タイトルスタイル改善、サブフォルダ再帰同期対応、⚙ボタントグル化 |
+| v1.2.0 | ファイル種類フィルタ追加、アイコン変更（👁）、タイトルスタイル改善、サブフォルダ再帰同期対応、⚙ボタントグル化 |
 | v1.3.0 | サブフォルダのビン構造保持オプション追加 |
 | v1.3.1 | buttonをdivに変更（UXPスタイル制約回避）、フォルダ削除時ログ連動削除、設定画面スクロール修正、フォントサイズ拡大、ティールカラー統一 |
-| v1.3.1LE | おためし版リリース（監視フォルダ1つ・自動同期1分固定） |
+| v1.3.1LE | おためし版リリース（監視フォルダ1つ・自動読み込み1分固定）※現在非推奨 |
+| v1.3.2 | 「同期」→「読み込み」に全表記統一、flac除外、読み込み間隔を4択に整理、通知機能削除（API非対応）、プラグインIDをcom.kamneko.metsukeに変更、Noto Serif JPフォント適用、👀アイコンに変更 |
 
 ---
 
-## 配布・公開計画
+## 今後の課題・バックログ
 
-- **将来の配布方法**: Adobe Creative Cloud Marketplace を検討中
-- **価格**: 未定
-- **現状**: 開発・テスト中
-
----
-
-## 今後実装予定の機能
-
-- [ ] 除外フォルダの登録
+- [ ] 除外フォルダの登録機能
 - [ ] ビン名の手動編集（設定画面から）
-- [ ] Adobe Creative Cloud Marketplace への公開
+- [ ] 削除・移動の反映（UXP API対応状況を継続監視）
+- [ ] Adobe Creative Cloud Marketplace への掲載
+- [ ] Mac環境での動作確認

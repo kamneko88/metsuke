@@ -299,7 +299,7 @@
 <div class="header">
   <span class="header-icon">👀</span>
   <span class="header-title">Metsuke</span>
-  <span class="header-version">v1.3.2</span>
+  <span class="header-version">v1.3.3</span>
   <div class="btn-settings" id="btnOpenSettings" title="設定">⚙</div>
 </div>
 
@@ -405,6 +405,10 @@
         <div class="s-label">画像<div class="s-label-sub">.jpg .png .tif .psd ...</div></div>
         <input type="checkbox" class="s-checkbox" id="sFilterImage" checked />
       </div>
+      <div class="s-row">
+        <div class="s-label">字幕<div class="s-label-sub">.srt .stl .xml .vtt .scc .mcc ...</div></div>
+        <input type="checkbox" class="s-checkbox" id="sFilterSubtitle" checked />
+      </div>
     </div>
 
     <!-- フォルダ構造 -->
@@ -463,6 +467,7 @@ const state = {
   filterVideo: true,
   filterAudio: true,
   filterImage: true,
+  filterSubtitle: true,
 
   // サブフォルダのビン構造を再現するか
   preserveStructure: true,
@@ -500,6 +505,7 @@ async function loadSettings() {
     state.filterVideo       = data.filterVideo       ?? true;
     state.filterAudio       = data.filterAudio       ?? true;
     state.filterImage        = data.filterImage        ?? true;
+    state.filterSubtitle     = data.filterSubtitle     ?? true;
     state.preserveStructure  = data.preserveStructure  ?? true;
     state.syncLog           = data.syncLog           ?? [];
 
@@ -520,6 +526,7 @@ async function saveSettings() {
       filterVideo:      state.filterVideo,
       filterAudio:      state.filterAudio,
       filterImage:       state.filterImage,
+      filterSubtitle:    state.filterSubtitle,
       preserveStructure: state.preserveStructure,
       syncLog:          state.syncLog.slice(0, 200),
     }, null, 2);
@@ -651,6 +658,7 @@ function applySettingsToUI() {
   document.getElementById('sFilterVideo').checked       = state.filterVideo;
   document.getElementById('sFilterAudio').checked       = state.filterAudio;
   document.getElementById('sFilterImage').checked         = state.filterImage;
+  document.getElementById('sFilterSubtitle').checked      = state.filterSubtitle;
   document.getElementById('sPreserveStructure').checked   = state.preserveStructure;
 }
 
@@ -719,6 +727,9 @@ document.getElementById('sFilterAudio').addEventListener('change', async (e) => 
 });
 document.getElementById('sFilterImage').addEventListener('change', async (e) => {
   state.filterImage = e.target.checked; await saveSettings();
+});
+document.getElementById('sFilterSubtitle').addEventListener('change', async (e) => {
+  state.filterSubtitle = e.target.checked; await saveSettings();
 });
 document.getElementById('sPreserveStructure').addEventListener('change', async (e) => {
   state.preserveStructure = e.target.checked; await saveSettings();
@@ -823,9 +834,11 @@ function isSupportedFile(filename) {
   const audioExts = ['.mp3','.wav','.aac','.aiff','.ogg','.m4a'];
   const imageExts = ['.jpg','.jpeg','.png','.gif','.tif','.tiff','.bmp','.webp','.psd','.psb','.ai','.eps'];
 
-  if (state.filterVideo && videoExts.includes(ext)) return true;
-  if (state.filterAudio && audioExts.includes(ext)) return true;
-  if (state.filterImage && imageExts.includes(ext)) return true;
+  const subtitleExts = ['.srt','.stl','.xml','.vtt','.scc','.mcc','.dfxmp','.ttml'];
+  if (state.filterVideo    && videoExts.includes(ext))    return true;
+  if (state.filterAudio    && audioExts.includes(ext))    return true;
+  if (state.filterImage    && imageExts.includes(ext))    return true;
+  if (state.filterSubtitle && subtitleExts.includes(ext)) return true;
   return false;
 }
 

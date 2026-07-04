@@ -2,7 +2,7 @@
   "manifestVersion": 5,
   "id": "com.kamneko.metsuke",
   "name": "Metsuke",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "main": "index.html",
   "description": "フォルダ自動同期 Premiere Pro UXPプラグイン / Watch folder auto-sync plugin for Premiere Pro",
   "host": {

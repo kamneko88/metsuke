@@ -1,6 +1,6 @@
 # Metsuke 開発まとめ
 
-最終更新日：2026-07-02
+最終更新日：2026-07-04
 
 ---
 
@@ -226,6 +226,7 @@ const dataFolder = await localFileSystem.getEntryWithUrl('plugin-data:/');
 | v1.3.1 | buttonをdivに変更（UXPスタイル制約回避）、フォルダ削除時ログ連動削除、設定画面スクロール修正、フォントサイズ拡大、ティールカラー統一 |
 | v1.3.1LE | おためし版リリース（監視フォルダ1つ・自動読み込み1分固定）※現在非推奨 |
 | v1.3.2 | 「同期」→「読み込み」に全表記統一、flac除外、読み込み間隔を4択に整理、通知機能削除（API非対応）、プラグインIDをcom.kamneko.metsukeに変更、Noto Serif JPフォント適用、👀アイコンに変更 |
+| v1.3.3 | 字幕ファイル対応追加（.srt .stl .xml .vtt .scc .mcc）、設定画面に「字幕」カテゴリを新設 |
 
 ---
 

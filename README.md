@@ -61,7 +61,6 @@ metsuke/
 ├── manifest.json        # プラグイン定義
 ├── package.json         # npm設定
 ├── index.html           # UI + ロジック（単一ファイル）
-├── metsuke_dev_notes.md # 開発まとめ・引き継ぎノート
 ├── README.md
 ├── LICENSE
 └── .gitignore

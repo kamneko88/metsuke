@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>Metsuke</title>
+  <title>目付 Metsuke</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@700;900&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -29,13 +29,20 @@
       flex-shrink: 0;
     }
     .header-icon { font-size: 20px; position: relative; top: -3px; }
-    .header-title {
+    .header-title-ja {
       font-size: 18px;
       font-weight: 900;
       color: #E1F5EE;
       letter-spacing: 1px;
-      text-transform: uppercase;
       font-family: 'Noto Serif JP', serif;
+    }
+    .header-title-en {
+      font-size: 11px;
+      font-weight: 600;
+      color: #5DCAA5;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-left: 6px;
     }
     .header-version { font-size: 11px; color: #5DCAA5; margin-left: auto; margin-right: 8px; }
     .btn-settings {
@@ -298,8 +305,9 @@
 <!-- ヘッダー（常に表示） -->
 <div class="header">
   <span class="header-icon">👀</span>
-  <span class="header-title">Metsuke</span>
-  <span class="header-version">v1.3.3</span>
+  <span class="header-title-ja">目付</span>
+  <span class="header-title-en">Metsuke</span>
+  <span class="header-version">v1.3.4</span>
   <div class="btn-settings" id="btnOpenSettings" title="設定">⚙</div>
 </div>
 
